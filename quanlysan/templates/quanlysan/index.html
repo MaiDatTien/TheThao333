@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Sân Thể Thao 333</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #00b14f;
+            --accent-color: #f7a800;
+            --bg-color: #f5f6f8;
+        }
+        body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+        
+        /* Top Nav */
+        .top-nav { background: white; padding: 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .search-box { position: relative; }
+        .search-box input { border-radius: 20px; padding-left: 35px; background: #f0f2f5; border: none; height: 40px; }
+        .search-box i { position: absolute; left: 12px; top: 12px; color: #888; }
+
+        /* Card Styles */
+        .sport-card {
+            background: white; border: none; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s; margin-bottom: 20px;
+        }
+        .sport-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .card-img-wrapper { position: relative; height: 180px; }
+        .card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Badges */
+        .badge-status { position: absolute; top: 10px; left: 10px; background: #28a745; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; pointer-events: none; }
+        
+        /* Action Buttons (Heart) */
+        .action-icons { position: absolute; top: 10px; right: 10px; z-index: 10; }
+        .icon-btn { 
+            background: rgba(255,255,255,0.9); width: 32px; height: 32px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; color: #333; 
+            text-decoration: none; transition: 0.2s; 
+        }
+        .icon-btn:hover { background: white; transform: scale(1.1); }
+        .icon-btn.active { color: #dc3545; }
+
+        /* Card Body */
+        .card-body { padding: 15px; }
+        .card-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .distance-tag { color: #ff6600; font-size: 13px; font-weight: 600; margin-right: 5px; }
+        .address-text { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .btn-booking {
+            background-color: var(--accent-color); color: white; font-weight: bold;
+            border-radius: 6px; padding: 6px 15px; font-size: 14px; border: none; text-decoration: none; display: inline-block;
+        }
+        .btn-booking:hover { background-color: #e09600; color: white; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+            display: flex; justify-content: space-around; padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .nav-item { text-align: center; color: #999; text-decoration: none; font-size: 11px; width: 20%; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        
+        .nav-item-center {
+            position: relative; top: -25px;
+            background: var(--primary-color); color: white !important; 
+            width: 50px; height: 50px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 177, 79, 0.4);
+        }
+        .nav-item-center i { margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav sticky-top">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <a href="{% url 'home' %}" class="text-decoration-none text-success fw-bold fs-5">
+                    <i class="fas fa-futbol"></i> SÂN 333
+                </a>
+                <div>
+                    {% if user.is_authenticated %}
+                        <span class="small fw-bold me-2">Hi, {{ user.last_name }}</span>
+                        <a href="{% url 'logout' %}" class="text-secondary small"><i class="fas fa-sign-out-alt"></i></a>
+                    {% else %}
+                        <a href="{% url 'signup' %}" class="btn btn-sm btn-outline-success rounded-pill px-3 me-1">Đăng ký</a>
+                        <a href="{% url 'login' %}" class="btn btn-sm btn-success rounded-pill px-3">Đăng nhập</a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <form action="" method="GET">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" class="form-control" placeholder="Tìm sân, địa điểm..." value="{{ query }}">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="container mt-3">
+        {% if user.is_staff %}
+        <div class="alert alert-info py-2 small d-flex justify-content-between align-items-center">
+            <span>🔧 Chào Admin, quản lý hệ thống tại đây:</span>
+            <div>
+                <a href="{% url 'them_moi' %}" class="btn btn-sm btn-light border">Thêm Sân</a>
+                <a href="{% url 'quan_ly_don' %}" class="btn btn-sm btn-light border">Đơn Đặt</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <h6 class="fw-bold mb-3 text-secondary">🔥 ĐỊA ĐIỂM NỔI BẬT</h6>
+        
+        <div class="row">
+            {% for san in cac_san %}
+            <div class="col-md-6 col-lg-4">
+                <div class="sport-card">
+                    
+                    <div class="card-img-wrapper">
+                        <a href="{% url 'chi_tiet_san' san.pk %}" class="d-block w-100 h-100 text-decoration-none">
+                            {% if san.hinh_anh %}
+                                <img src="{{ san.hinh_anh.url }}" alt="{{ san.ten_san }}">
+                            {% else %}
+                                <img src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=600" alt="Default">
+                            {% endif %}
+                            <span class="badge-status">Đang mở cửa</span>
+                        </a>
+
+                        <div class="action-icons">
+                            <a href="{% url 'toggle_yeu_thich' san.pk %}" class="icon-btn {% if user in san.nguoi_yeu_thich.all %}active{% endif %}">
+                                <i class="{% if user in san.nguoi_yeu_thich.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="text-warning small me-1"><i class="fas fa-star"></i></span>
+                            <span class="fw-bold small">{{ san.danh_gia }}</span>
+                            <span class="text-muted small ms-1">({{ san.so_luot_danh_gia }} đánh giá)</span>
+                        </div>
+
+                        <a href="{% url 'chi_tiet_san' san.pk %}" class="text-decoration-none text-dark">
+                            <h5 class="card-title">{{ san.ten_san }}</h5>
+                        </a>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="distance-tag">{{ san.khoang_cach }}km</span>
+                            <span class="address-text">{{ san.dia_chi }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <div class="small fw-bold text-success">{{ san.gia_tien }}đ<span class="fw-normal text-muted">/giờ</span></div>
+                            <a href="{% url 'dat_san' san.pk %}" class="btn-booking">ĐẶT LỊCH</a>
+                        </div>
+                        
+                        {% if user.is_staff %}
+                            <div class="text-end mt-2">
+                                <a href="{% url 'sua_san' san.pk %}" class="small text-warning text-decoration-none me-2">Sửa</a>
+                                <a href="{% url 'xoa_san' san.pk %}" class="small text-danger text-decoration-none" onclick="return confirm('Xóa?')">Xóa</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-search fa-3x mb-3"></i><br>Không tìm thấy sân nào phù hợp.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="{% url 'home' %}" class="nav-item active">
+            <i class="fas fa-home"></i> Trang chủ
+        </a>
+        <a href="{% url 'ban_do_lon' %}" class="nav-item">
+            <i class="fas fa-map-marked-alt"></i> Bản đồ
+        </a>
+        <a href="{% url 'home' %}" class="nav-item nav-item-center">
+            <i class="fas fa-search-location"></i>
+        </a>
+        <a href="{% url 'lich_su_dat' %}" class="nav-item">
+            <i class="fas fa-calendar-check"></i> Đã đặt
+        </a>
+        <a href="{% url 'ho_so' %}" class="nav-item">
+            <i class="fas fa-user"></i> Tài khoản
+        </a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

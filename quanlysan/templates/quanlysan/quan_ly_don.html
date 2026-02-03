@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>Quản Lý Đơn</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light container mt-4">
+    <div class="d-flex justify-content-between mb-4">
+        <h3>📋 Danh Sách Đặt Sân</h3>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Về Trang Chủ</a>
+    </div>
+    <table class="table table-bordered bg-white shadow-sm">
+        <thead class="table-dark">
+            <tr><th>Khách</th><th>Sân</th><th>Thời Gian</th><th>Trạng Thái</th><th>Xử Lý</th></tr>
+        </thead>
+        <tbody>
+            {% for don in ds_don %}
+            <tr>
+                <td><b>{{ don.ho_ten }}</b><br><small>{{ don.sdt }}</small></td>
+                <td>{{ don.san.ten_san }}</td>
+                <td>{{ don.ngay_dat|date:"d/m" }} - {{ don.gio_bat_dau }}</td>
+                <td>
+                    {% if don.trang_thai == 'CHO_DUYET' %} <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                    {% elif don.trang_thai == 'DA_DUYET' %} <span class="badge bg-success">Đã duyệt</span>
+                    {% else %} <span class="badge bg-danger">Đã hủy</span> {% endif %}
+                </td>
+                <td>
+                    {% if don.trang_thai == 'CHO_DUYET' %}
+                        <a href="{% url 'duyet_don' don.pk 'DA_DUYET' %}" class="btn btn-sm btn-success">✅</a>
+                        <a href="{% url 'duyet_don' don.pk 'TU_CHOI' %}" class="btn btn-sm btn-danger">❌</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %} <tr><td colspan="5">Chưa có đơn nào.</td></tr> {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
