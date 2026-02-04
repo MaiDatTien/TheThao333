@@ -8,25 +8,17 @@ class LoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tên đăng nhập'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Mật khẩu'}))
 
-# --- FORM ĐĂNG KÝ (QUAN TRỌNG) ---
+# Form Đăng ký
 class SignUpForm(UserCreationForm):
-    # Thêm các trường nhập liệu bổ sung
-    first_name = forms.CharField(label="Tên", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ví dụ: Nam'}))
-    last_name = forms.CharField(label="Họ đệm", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ví dụ: Nguyễn Văn'}))
-    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'name@example.com'}))
+    first_name = forms.CharField(label="Tên", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(label="Họ", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
 
     class Meta:
         model = User
-        # Các trường sẽ hiện ra (Lưu ý: password đã có sẵn trong UserCreationForm)
         fields = ('username', 'last_name', 'first_name', 'email')
-        help_texts = {
-            'username': None, # Ẩn dòng hướng dẫn rườm rà của Django
-        }
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tên đăng nhập (viết liền)'}),
-        }
 
-# ... (Giữ nguyên các Form SanBong, DatSan, SanPham bên dưới) ...
+# Form Sân Bóng
 class SanBongForm(forms.ModelForm):
     class Meta:
         model = SanBong
@@ -42,6 +34,7 @@ class SanBongForm(forms.ModelForm):
             'khoang_cach': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
+# Form Sản Phẩm
 class SanPhamForm(forms.ModelForm):
     class Meta:
         model = SanPham
@@ -53,12 +46,12 @@ class SanPhamForm(forms.ModelForm):
             'hinh_anh': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
+# Form Đặt Sân
 class DatSanForm(forms.ModelForm):
     dich_vu_kem = forms.ModelMultipleChoiceField(
         queryset=SanPham.objects.all(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
-        required=False,
-        label="Dịch vụ thêm"
+        required=False
     )
     class Meta:
         model = DatSan
@@ -68,5 +61,5 @@ class DatSanForm(forms.ModelForm):
             'sdt': forms.TextInput(attrs={'class': 'form-control'}),
             'ngay_dat': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'gio_bat_dau': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'thoi_luong': forms.NumberInput(attrs={'class': 'form-control', 'step': 30}),
+            'thoi_luong': forms.NumberInput(attrs={'class': 'form-control'}),
         }

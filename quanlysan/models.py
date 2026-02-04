@@ -10,12 +10,12 @@ class SanBong(models.Model):
     kinh_do = models.FloatField(verbose_name="Kinh độ")
     hinh_anh = models.ImageField(upload_to='san_bong/', blank=True, null=True, verbose_name="Hình ảnh sân")
     
-    # --- MỚI THÊM: Tính năng giống App ---
-    danh_gia = models.FloatField(default=5.0, verbose_name="Điểm đánh giá (Sao)")
+    # Các trường bổ sung cho giao diện đẹp
+    danh_gia = models.FloatField(default=5.0, verbose_name="Điểm đánh giá")
     so_luot_danh_gia = models.IntegerField(default=0, verbose_name="Số lượt review")
-    khoang_cach = models.FloatField(default=1.5, verbose_name="Khoảng cách (km)") # Demo
+    khoang_cach = models.FloatField(default=1.5, verbose_name="Khoảng cách demo (km)") 
     
-    # Quản lý người yêu thích sân (Thả tim)
+    # Quản lý người yêu thích sân
     nguoi_yeu_thich = models.ManyToManyField(User, related_name='san_yeu_thich', blank=True)
 
     def __str__(self):
@@ -26,7 +26,6 @@ class SanPham(models.Model):
     LOAI_CHOICES = [('THUE', 'Thuê (Giày/Vợt/Áo)'), ('DO_AN', 'Đồ Ăn / Nước Uống')]
     ten_sp = models.CharField(max_length=100, verbose_name="Tên sản phẩm")
     loai = models.CharField(max_length=20, choices=LOAI_CHOICES, default='DO_AN', verbose_name="Loại")
-    # --- DÒNG BỊ LỖI CỦA BẠN ĐÃ ĐƯỢC SỬA Ở ĐÂY ---
     gia = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Giá tiền")
     hinh_anh = models.ImageField(upload_to='san_pham/', blank=True, null=True, verbose_name="Hình ảnh")
     
