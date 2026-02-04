@@ -1,68 +1,87 @@
 <!DOCTYPE html>
-<html lang="vi" data-bs-theme="dark">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
     <title>Quản Lý Dịch Vụ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style> 
-        .sp-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #555; } 
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-dark container mt-4 text-white">
+<body class="bg-light container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="text-success">🍔 Quản Lý Dịch Vụ & Hình Ảnh</h3>
-        <a href="{% url 'home' %}" class="btn btn-outline-light">Về Trang Chủ</a>
+        <h3 class="text-warning text-dark"><i class="fas fa-hamburger"></i> Quản Lý Dịch Vụ & Đồ Ăn</h3>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Về Trang Chủ</a>
     </div>
 
     <div class="row">
-        <div class="col-md-4 mb-3">
-            <div class="card bg-secondary text-white">
-                <div class="card-header fw-bold">Thêm Mới</div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning fw-bold text-dark">
+                    <i class="fas fa-plus-circle"></i> Thêm Mới
+                </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button class="btn btn-success w-100 mt-2">Lưu Sản Phẩm</button>
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                        {% endfor %}
+                        <button class="btn btn-dark w-100 fw-bold">Lưu Sản Phẩm</button>
                     </form>
                 </div>
             </div>
         </div>
 
         <div class="col-md-8">
-            <table class="table table-dark table-striped table-bordered align-middle">
-                <thead>
-                    <tr>
-                        <th>Ảnh</th>
-                        <th>Tên</th>
-                        <th>Loại</th>
-                        <th>Giá</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sp in san_pham %}
-                    <tr>
-                        <td>
-                            {% if sp.hinh_anh %}
-                                <img src="{{ sp.hinh_anh.url }}" class="sp-thumb">
-                            {% else %}
-                                <span class="text-muted small">Không có</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ sp.ten_sp }}</td>
-                        <td>
-                            {% if sp.loai == 'THUE' %} <span class="badge bg-info text-dark">Thuê đồ</span>
-                            {% else %} <span class="badge bg-warning text-dark">Đồ ăn</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ sp.gia }}đ</td>
-                        <td>
-                            <a href="{% url 'xoa_san_pham' sp.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa?')">Xóa</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="card shadow border-0">
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="ps-3">Hình ảnh</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Loại</th>
+                                <th>Giá tiền</th>
+                                <th class="text-end pe-3">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sp in san_pham %}
+                            <tr>
+                                <td class="ps-3">
+                                    {% if sp.hinh_anh %}
+                                        <img src="{{ sp.hinh_anh.url }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+                                    {% else %}
+                                        <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ sp.ten_sp }}</td>
+                                <td>
+                                    {% if sp.loai == 'DO_AN' %}
+                                        <span class="badge bg-success">Đồ ăn/Nước</span>
+                                    {% else %}
+                                        <span class="badge bg-info text-dark">Thuê đồ</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-danger fw-bold">{{ sp.gia }}đ</td>
+                                <td class="text-end pe-3">
+                                    <a href="{% url 'xoa_san_pham' sp.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa sản phẩm này?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">Chưa có sản phẩm nào.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </body>
