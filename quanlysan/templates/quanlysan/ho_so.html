@@ -1,71 +1,67 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <title>Tài Khoản</title>
+    <title>Hồ Sơ Cá Nhân</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .avatar-circle { width: 80px; height: 80px; background: #00b14f; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto; }
-        .menu-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; text-decoration: none; color: #333; }
-        .menu-item:last-child { border-bottom: none; }
-        .menu-item i { width: 30px; color: #666; }
-        .menu-item:hover { background: #f9f9f9; }
+        :root { --primary-color: #00b14f; --accent-color: #f7a800; }
+        body { background-color: #f5f6f8; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-item { text-align: center; color: #999; text-decoration: none; font-size: 11px; width: 20%; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        .nav-item-center { position: relative; top: -25px; background: var(--primary-color); color: white !important; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0, 177, 79, 0.4); }
+        .nav-item-center i { margin: 0; }
+        .avatar-circle { width: 80px; height: 80px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #666; margin: 0 auto 15px; }
     </style>
 </head>
 <body class="bg-light">
-    <div class="bg-white p-4 text-center shadow-sm mb-3">
-        <div class="avatar-circle mb-2">
-            {{ user.username|make_list|first|upper }}
-        </div>
-        <h5 class="fw-bold mb-0">{{ user.last_name }} {{ user.first_name }}</h5>
-        <p class="text-muted small">@{{ user.username }}</p>
-        
-        {% if user.is_staff %}
-            <span class="badge bg-warning text-dark">Quản trị viên (Admin)</span>
-        {% else %}
-            <span class="badge bg-secondary">Thành viên</span>
-        {% endif %}
-    </div>
 
-    <div class="container">
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body p-0">
-                <a href="{% url 'lich_su_dat' %}" class="menu-item">
-                    <i class="fas fa-history"></i> Lịch sử đặt sân
-                </a>
-                <a href="#" class="menu-item">
-                    <i class="far fa-heart"></i> Sân yêu thích
-                </a>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-cog"></i> Cài đặt tài khoản
-                </a>
-                <a href="#" class="menu-item">
-                    <i class="fas fa-headset"></i> Hỗ trợ
+    <div class="container mt-4">
+        <div class="card shadow border-0">
+            <div class="card-body text-center p-4">
+                <div class="avatar-circle">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h4>{{ user.last_name }} {{ user.first_name }}</h4>
+                <p class="text-muted">@{{ user.username }}</p>
+                <hr>
+                <div class="text-start">
+                    <p><i class="fas fa-envelope me-2"></i> {{ user.email }}</p>
+                    <p><i class="fas fa-clock me-2"></i> Tham gia: {{ user.date_joined|date:"d/m/Y" }}</p>
+                </div>
+                
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 mt-3">
+                    <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                 </a>
             </div>
         </div>
 
         {% if user.is_staff %}
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body p-0">
-                <div class="p-2 bg-warning bg-opacity-10 text-warning small fw-bold px-3">ADMIN TOOLS</div>
-                <a href="{% url 'quan_ly_don' %}" class="menu-item">
-                    <i class="fas fa-clipboard-list text-warning"></i> Quản lý đơn hàng
-                </a>
-                <a href="{% url 'them_moi' %}" class="menu-item">
-                    <i class="fas fa-plus-circle text-warning"></i> Thêm sân mới
-                </a>
+        <div class="card shadow border-0 mt-3">
+            <div class="card-header bg-warning text-dark fw-bold">
+                <i class="fas fa-tools"></i> Menu Admin
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'them_dia_diem' %}" class="list-group-item list-group-item-action">➕ Thêm Cụm Sân Mới</a>
+                <a href="{% url 'them_san_con' %}" class="list-group-item list-group-item-action">⚽ Thêm Sân Con</a>
+                <a href="{% url 'quan_ly_don' %}" class="list-group-item list-group-item-action">📋 Quản Lý Đơn Đặt</a>
+                <a href="{% url 'quan_ly_thanh_vien' %}" class="list-group-item list-group-item-action">👥 Quản Lý Thành Viên</a>
+                <a href="{% url 'ds_san_pham' %}" class="list-group-item list-group-item-action">🍔 Quản Lý Dịch Vụ</a>
             </div>
         </div>
         {% endif %}
-
-        <div class="text-center mt-4">
-            <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100">
-                <i class="fas fa-sign-out-alt"></i> Đăng xuất
-            </a>
-            <a href="{% url 'home' %}" class="btn btn-link text-decoration-none mt-2">Về trang chủ</a>
-        </div>
     </div>
+
+    <div class="bottom-nav">
+        <a href="{% url 'home' %}" class="nav-item"><i class="fas fa-home"></i> Trang chủ</a>
+        <a href="{% url 'ban_do_lon' %}" class="nav-item"><i class="fas fa-map-marked-alt"></i> Bản đồ</a>
+        <a href="{% url 'home' %}" class="nav-item nav-item-center"><i class="fas fa-search-location"></i></a>
+        <a href="{% url 'lich_su_dat' %}" class="nav-item"><i class="fas fa-calendar-check"></i> Đã đặt</a>
+        <a href="{% url 'ho_so' %}" class="nav-item active"><i class="fas fa-user"></i> Tài khoản</a>
+    </div>
+
 </body>
 </html>
