@@ -1,135 +1,108 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.http import HttpResponseRedirect
-from django.contrib.auth.models import User  # <--- QUAN TRỌNG: Import User
-from decimal import Decimal              # <--- QUAN TRỌNG: Import Decimal
-from .models import SanBong, DatSan, SanPham
-from .forms import SanBongForm, DatSanForm, LoginForm, SignUpForm, SanPhamForm
+from django.contrib.auth.models import User
+from django.db.models import Q
+from decimal import Decimal
+from datetime import datetime, timedelta, date
+from .models import DiaDiem, SanBong, DatSan, SanPham
+from .forms import DiaDiemForm, SanBongForm, DatSanForm, LoginForm, SignUpForm, SanPhamForm
 import folium
 
-# --- 1. AUTHENTICATION ---
-def dang_nhap(request):
-    if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect(request.GET.get('next', 'home'))
-    else: form = LoginForm()
-    return render(request, 'quanlysan/login.html', {'form': form})
-
-def dang_ky(request):
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')
-    else: form = SignUpForm()
-    return render(request, 'quanlysan/signup.html', {'form': form})
-
-def dang_xuat(request):
-    logout(request)
-    return redirect('home')
-
-def is_admin(user): return user.is_authenticated and user.is_staff
-
-# --- 2. QUẢN LÝ THÀNH VIÊN (MỚI) ---
-@user_passes_test(is_admin)
-def quan_ly_thanh_vien(request):
-    """Admin xem danh sách thành viên thường"""
-    users = User.objects.filter(is_staff=False).order_by('-date_joined')
-    return render(request, 'quanlysan/quan_ly_thanh_vien.html', {'users': users})
-
-@user_passes_test(is_admin)
-def xoa_thanh_vien(request, pk):
-    """Admin xóa thành viên"""
-    user = get_object_or_404(User, pk=pk)
-    if not user.is_staff: # Không cho xóa admin khác
-        user.delete()
-    return redirect('quan_ly_thanh_vien')
-
-# --- 3. TRANG CHỦ & CHI TIẾT ---
 def trang_chu(request):
     query = request.GET.get('q', '')
     if query:
-        ds_san = SanBong.objects.filter(Q(ten_san__icontains=query) | Q(dia_chi__icontains=query))
+        cac_dia_diem = DiaDiem.objects.filter(
+            Q(ten_dia_diem__icontains=query) | 
+            Q(dia_chi__icontains=query) |
+            Q(ds_san_con__ten_san__icontains=query)
+        ).distinct()
     else:
-        ds_san = SanBong.objects.all()
-    return render(request, 'quanlysan/index.html', {'cac_san': ds_san, 'query': query})
+        cac_dia_diem = DiaDiem.objects.all()
+        
+    return render(request, 'quanlysan/index.html', {
+        'cac_dia_diem': cac_dia_diem, 
+        'query': query
+    })
 
-def chi_tiet_san(request, pk):
-    san = get_object_or_404(SanBong, pk=pk)
-    return render(request, 'quanlysan/chi_tiet_san.html', {'san': san})
-
-# --- 4. CHỨC NĂNG ---
-def ban_do_lon(request):
-    cac_san = SanBong.objects.all()
-    ban_do = folium.Map(location=[10.8231, 106.6297], zoom_start=12)
-    for san in cac_san:
-        html = f"<b>{san.ten_san}</b><br><a href='/chi-tiet/{san.id}/' target='_blank'>Xem</a>"
-        folium.Marker([san.vi_do, san.kinh_do], popup=html).add_to(ban_do)
-    return render(request, 'quanlysan/ban_do.html', {'ban_do': ban_do._repr_html_()})
-
-@login_required
-def lich_su_dat(request):
-    ds_don = DatSan.objects.filter(khach_hang=request.user).order_by('-created_at')
-    return render(request, 'quanlysan/lich_su.html', {'ds_don': ds_don})
-
-@login_required
-def ho_so_ca_nhan(request): return render(request, 'quanlysan/ho_so.html')
-
-@login_required
-def toggle_yeu_thich(request, pk):
-    san = get_object_or_404(SanBong, pk=pk)
-    if san.nguoi_yeu_thich.filter(id=request.user.id).exists(): san.nguoi_yeu_thich.remove(request.user)
-    else: san.nguoi_yeu_thich.add(request.user)
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+def chi_tiet_dia_diem(request, pk):
+    dia_diem = get_object_or_404(DiaDiem, pk=pk)
+    ds_san_con = dia_diem.ds_san_con.all()
+    return render(request, 'quanlysan/chi_tiet_dia_diem.html', {'dia_diem': dia_diem, 'ds_san_con': ds_san_con})
 
 @login_required
 def dat_san(request, pk):
-    san = get_object_or_404(SanBong, pk=pk)
+    san_con = get_object_or_404(SanBong, pk=pk)
+    error_msg = None
+    
     if request.method == 'POST':
         form = DatSanForm(request.POST)
         if form.is_valid():
-            don = form.save(commit=False)
-            don.san = san
-            don.khach_hang = request.user
-            # Tính tiền dùng Decimal
-            don.tong_tien = (san.gia_tien / Decimal(60)) * Decimal(don.thoi_luong)
-            don.save(); form.save_m2m()
-            don.tong_tien += sum([sp.gia for sp in don.dich_vu_kem.all()])
-            don.tien_coc = don.tong_tien * Decimal('0.3')
-            don.save()
-            return render(request, 'quanlysan/thanh_cong.html', {'don': don})
+            ngay = form.cleaned_data['ngay_dat']
+            gio_bd = form.cleaned_data['gio_bat_dau']
+            phut_thue = form.cleaned_data['thoi_luong']
+            
+            dummy_date = datetime.combine(date.today(), gio_bd)
+            gio_kt = (dummy_date + timedelta(minutes=phut_thue)).time()
+            
+            trung_lich = DatSan.objects.filter(
+                san=san_con,
+                ngay_dat=ngay,
+                trang_thai__in=['CHO_DUYET', 'DA_DUYET']
+            ).filter(
+                Q(gio_bat_dau__lt=gio_kt) & Q(gio_bat_dau__gte=gio_bd) | 
+                Q(gio_bat_dau__lte=gio_bd, thoi_luong__gt=0) 
+            )
+            
+            is_conflict = False
+            for don in trung_lich:
+                don_start = datetime.combine(ngay, don.gio_bat_dau)
+                don_end = don_start + timedelta(minutes=don.thoi_luong)
+                req_start = datetime.combine(ngay, gio_bd)
+                req_end = req_start + timedelta(minutes=phut_thue)
+                if req_start < don_end and req_end > don_start:
+                    is_conflict = True
+                    break
+            
+            if is_conflict:
+                error_msg = f"Giờ {gio_bd} ngày {ngay} đã có người đặt! Vui lòng chọn giờ khác."
+            else:
+                don = form.save(commit=False)
+                don.san = san_con
+                don.khach_hang = request.user
+                
+                don.tong_tien = (san_con.gia_tien / Decimal(60)) * Decimal(don.thoi_luong)
+                don.save()
+                form.save_m2m()
+                
+                don.tong_tien += sum([sp.gia for sp in don.dich_vu_kem.all()])
+                don.tien_coc = don.tong_tien * Decimal('0.3')
+                
+                don.save()
+                return render(request, 'quanlysan/thanh_cong.html', {'don': don})
     else:
-        form = DatSanForm(initial={'ho_ten': request.user.last_name, 'sdt': ''})
-    return render(request, 'quanlysan/dat_san.html', {'form': form, 'san': san})
+        initial_data = {'ho_ten': f"{request.user.last_name} {request.user.first_name}", 'sdt': ''}
+        form = DatSanForm(initial=initial_data)
+        
+    return render(request, 'quanlysan/dat_san.html', {'form': form, 'san': san_con, 'error_msg': error_msg})
 
-# --- 5. ADMIN TOOLS ---
-@user_passes_test(is_admin)
-def them_moi_san(request):
+@user_passes_test(lambda u: u.is_staff)
+def them_dia_diem(request):
     if request.method == 'POST':
-        form = SanBongForm(request.POST, request.FILES)
+        form = DiaDiemForm(request.POST, request.FILES)
+        if form.is_valid(): form.save(); return redirect('home')
+    else: form = DiaDiemForm()
+    return render(request, 'quanlysan/them_dia_diem.html', {'form': form, 'title': 'Thêm Cụm Sân'})
+
+@user_passes_test(lambda u: u.is_staff)
+def them_san_con(request):
+    if request.method == 'POST':
+        form = SanBongForm(request.POST)
         if form.is_valid(): form.save(); return redirect('home')
     else: form = SanBongForm()
-    return render(request, 'quanlysan/them_san.html', {'form': form})
+    return render(request, 'quanlysan/them_dia_diem.html', {'form': form, 'title': 'Thêm Sân Con'})
 
-@user_passes_test(is_admin)
-def sua_san(request, pk):
-    san = get_object_or_404(SanBong, pk=pk)
-    if request.method == 'POST':
-        form = SanBongForm(request.POST, request.FILES, instance=san)
-        if form.is_valid(): form.save(); return redirect('home')
-    else: form = SanBongForm(instance=san)
-    return render(request, 'quanlysan/sua_san.html', {'form': form, 'san': san})
-
-@user_passes_test(is_admin)
-def xoa_san(request, pk):
-    get_object_or_404(SanBong, pk=pk).delete(); return redirect('home')
-
-@user_passes_test(is_admin)
+@user_passes_test(lambda u: u.is_staff)
 def ds_san_pham(request):
     san_pham = SanPham.objects.all()
     if request.method == 'POST':
@@ -138,16 +111,57 @@ def ds_san_pham(request):
     else: form = SanPhamForm()
     return render(request, 'quanlysan/ds_san_pham.html', {'san_pham': san_pham, 'form': form})
 
-@user_passes_test(is_admin)
+@user_passes_test(lambda u: u.is_staff)
 def xoa_san_pham(request, pk):
-    get_object_or_404(SanPham, pk=pk).delete(); return redirect('ds_san_pham')
+    get_object_or_404(SanPham, pk=pk).delete()
+    return redirect('ds_san_pham')
 
-@user_passes_test(is_admin)
-def quan_ly_don(request):
-    ds_don = DatSan.objects.all().order_by('-created_at')
-    return render(request, 'quanlysan/quan_ly_don.html', {'ds_don': ds_don})
+def dang_nhap(request):
+    if request.method == 'POST':
+        form = LoginForm(request, data=request.POST)
+        if form.is_valid(): login(request, form.get_user()); return redirect('home')
+    else: form = LoginForm()
+    return render(request, 'quanlysan/login.html', {'form': form})
 
-@user_passes_test(is_admin)
+def dang_ky(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid(): user = form.save(); login(request, user); return redirect('home')
+    else: form = SignUpForm()
+    return render(request, 'quanlysan/signup.html', {'form': form})
+
+def dang_xuat(request): logout(request); return redirect('home')
+
+@login_required
+def lich_su_dat(request):
+    ds = DatSan.objects.filter(khach_hang=request.user).order_by('-created_at')
+    return render(request, 'quanlysan/lich_su.html', {'ds_don': ds})
+
+@login_required
+def ho_so_ca_nhan(request): return render(request, 'quanlysan/ho_so.html')
+
+@user_passes_test(lambda u: u.is_staff)
+def quan_ly_thanh_vien(request):
+    users = User.objects.filter(is_staff=False)
+    return render(request, 'quanlysan/quan_ly_thanh_vien.html', {'users': users})
+
+@user_passes_test(lambda u: u.is_staff)
+def xoa_thanh_vien(request, pk):
+    u = get_object_or_404(User, pk=pk)
+    if not u.is_staff: u.delete()
+    return redirect('quan_ly_thanh_vien')
+
+@user_passes_test(lambda u: u.is_staff)
+def quan_ly_don(request): return render(request, 'quanlysan/quan_ly_don.html', {'ds_don': DatSan.objects.all().order_by('-created_at')})
+
+@user_passes_test(lambda u: u.is_staff)
 def duyet_don(request, pk, trang_thai):
-    don = get_object_or_404(DatSan, pk=pk); don.trang_thai = trang_thai; don.save()
-    return redirect('quan_ly_don')
+    d = get_object_or_404(DatSan, pk=pk); d.trang_thai = trang_thai; d.save(); return redirect('quan_ly_don')
+
+def ban_do_lon(request):
+    cac_dia_diem = DiaDiem.objects.all()
+    ban_do = folium.Map(location=[10.8231, 106.6297], zoom_start=12)
+    for dd in cac_dia_diem:
+        html = f"<b>{dd.ten_dia_diem}</b><br><a href='/dia-diem/{dd.id}/'>Xem chi tiết</a>"
+        folium.Marker([dd.vi_do, dd.kinh_do], popup=html).add_to(ban_do)
+    return render(request, 'quanlysan/ban_do.html', {'ban_do': ban_do._repr_html_()})
