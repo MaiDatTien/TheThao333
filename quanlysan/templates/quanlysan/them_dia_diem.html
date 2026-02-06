@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>{{ title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map-picker { height: 400px; width: 100%; border-radius: 8px; border: 2px solid #00b14f; margin-bottom: 20px; cursor: crosshair; }
+    </style>
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh">
+
+    <div class="card shadow-lg border-0 my-5" style="width: 800px; border-radius: 12px;">
+        <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-uppercase"><i class="fas fa-map-marker-alt"></i> {{ title }}</h5>
+            <button type="button" class="btn btn-sm btn-light text-success fw-bold" onclick="getMyLocation()">
+                <i class="fas fa-crosshairs"></i> Vị trí của tôi
+            </button>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-7">
+                    <p class="text-primary fw-bold small mb-2"><i class="fas fa-info-circle"></i> Click chuột vào bản đồ để chọn vị trí:</p>
+                    <div id="map-picker"></div>
+                </div>
+
+                <div class="col-md-5">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-2">
+                            <label class="form-label fw-bold small text-secondary mb-1">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success fw-bold">LƯU LẠI</button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <script>
+        var defaultLat = 10.8231;
+        var defaultLng = 106.6297;
+        var map = L.map('map-picker').setView([defaultLat, defaultLng], 13);
+        
+        L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(map);
+
+        var marker;
+
+        map.on('click', function(e) {
+            var lat = e.latlng.lat.toFixed(6);
+            var lng = e.latlng.lng.toFixed(6);
+
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+            
+            document.getElementById('txtLat').value = lat;
+            document.getElementById('txtLng').value = lng;
+
+            marker.on('dragend', function(event) {
+                var position = marker.getLatLng();
+                document.getElementById('txtLat').value = position.lat.toFixed(6);
+                document.getElementById('txtLng').value = position.lng.toFixed(6);
+            });
+        });
+
+        function getMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    
+                    map.setView([lat, lng], 16);
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([lat, lng]).addTo(map);
+                    
+                    document.getElementById('txtLat').value = lat.toFixed(6);
+                    document.getElementById('txtLng').value = lng.toFixed(6);
+                });
+            } else {
+                alert("Trình duyệt không hỗ trợ định vị.");
+            }
+        }
+    </script>
+</body>
+</html>
